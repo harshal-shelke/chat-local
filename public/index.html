@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location-Based Chat</title>
+</head>
+<body>
+    <div id="chat-container">
+        <h1>Location-Based Chat</h1>
+        <div id="messages"></div>
+        <input id="messageInput" type="text" placeholder="Type a message..." />
+        <button id="sendButton">Send</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Get user location and join room
+        navigator.geolocation.getCurrentPosition((position) => {
+            const { latitude, longitude } = position.coords;
+            socket.emit('joinRoom', { latitude, longitude });
+
+            // Display incoming messages
+            socket.on('receiveMessage', (message) => {
+                const messagesDiv = document.getElementById('messages');
+                const newMessage = document.createElement('div');
+                newMessage.textContent = `${message.username}: ${message.text}`;
+                messagesDiv.appendChild(newMessage);
+            });
+
+            // Load old messages
+            socket.on('loadMessages', (messages) => {
+                const messagesDiv = document.getElementById('messages');
+                messages.forEach((msg) => {
+                    const oldMessage = document.createElement('div');
+                    oldMessage.textContent = `${msg.username}: ${msg.text}`;
+                    messagesDiv.appendChild(oldMessage);
+                });
+            });
+
+            // Send message
+            const sendButton = document.getElementById('sendButton');
+            sendButton.addEventListener('click', () => {
+                const input = document.getElementById('messageInput');
+                const text = input.value;
+                input.value = '';
+                socket.emit('sendMessage', {
+                    room: `${latitude.toFixed(2)}_${longitude.toFixed(2)}`,
+                    username: 'User', // Replace with real username
+                    text,
+                });
+            });
+        });
+    </script>
+</body>
+</html>
